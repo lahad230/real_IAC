@@ -57,7 +57,8 @@ resource "azurerm_public_ip" "ip" {
 ######jenkins machine######
 
 resource "azurerm_network_interface" "jenNic" {
-  name                = "jenkinsNic"
+  count = 2
+  name                = "jenkinsNic${count.index}"
   location            = module.projBase.rg_location
   resource_group_name = module.projBase.rg_name
 
@@ -69,7 +70,8 @@ resource "azurerm_network_interface" "jenNic" {
 }
 
 resource "azurerm_linux_virtual_machine" "Vm" {
-  name                = "jenkins"
+  count = 2
+  name                = "jenkins${count.index}"
   resource_group_name = module.projBase.rg_name
   location            = module.projBase.rg_location
   size                = var.vmSize
@@ -79,7 +81,7 @@ resource "azurerm_linux_virtual_machine" "Vm" {
   disable_password_authentication = false
   
   network_interface_ids = [
-    azurerm_network_interface.jenNic.id
+    azurerm_network_interface.jenNic[count.index].id
   ]
 
   os_disk {

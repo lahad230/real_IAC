@@ -54,15 +54,7 @@ resource "azurerm_public_ip" "ip" {
   sku                 = "Standard"
 }
 
-
 ######jenkins machine######
-resource "azurerm_public_ip" "jenkinsip" {
-  name                = "jenkinsip"
-  resource_group_name = module.projBase.rg_name
-  location            = module.projBase.rg_location
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
 
 resource "azurerm_network_interface" "jenNic" {
   name                = "jenkinsNic"
@@ -73,7 +65,6 @@ resource "azurerm_network_interface" "jenNic" {
     name                          = "jenNicConf"
     subnet_id                     = module.projBase.public_subnet_id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.jenkinsip.id
   }
 }
 
@@ -107,17 +98,23 @@ resource "azurerm_linux_virtual_machine" "Vm" {
 ######VMs and NICs######
 #VMs and nics hosting web application:
 module "web" {
-  source        = "./modules/linuxVm"
-  count         = var.numOfPublicVms
-  vm_name       = "web${count.index}"
-  rg_name       = module.projBase.rg_name
-  rg_location   = module.projBase.rg_location
-  vm_size       = var.vmSize
-  vm_username   = var.username
-  vm_password   = var.password
-  nic_name      = "webNic${count.index}"
-  nic_conf_name = "webConf${count.index}"
-  subnet_id     = module.projBase.public_subnet_id
+  source            = "./modules/linuxVm"
+  count             = var.numOfPublicVms
+  vm_name           = "web${count.index}"
+  rg_name           = module.projBase.rg_name
+  rg_location       = module.projBase.rg_location
+  vm_size           = var.vmSize
+  vm_username       = var.username
+  vm_password       = var.password
+  nic_name          = "webNic${count.index}"
+  nic_conf_name     = "webConf${count.index}"
+  subnet_id         = module.projBase.public_subnet_id
+  okta_url          = var.okta_url
+  okta_id           = var.okta_id
+  okta_secret       = var.okta_secret
+  postgres_user     = var.postgres_user
+  postgres_password = var.postgresPassword
+
   fqdn          = azurerm_postgresql_server.postgres.fqdn
   depends_on = [
     azurerm_postgresql_server.postgres

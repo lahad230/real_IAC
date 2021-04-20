@@ -69,3 +69,23 @@ variable "postgresPassword" {
   description = "password for postgresql"
   type        = string
 }
+
+variable "okta_url" {
+  type        = string
+  description = "okta dev url"
+}
+
+variable "okta_id" {
+  type        = string
+  description = "okta app id"
+}
+
+variable "okta_secret" {
+  type        = string
+  description = "okta app secret"
+}
+
+variable "postgres_user" {
+  type        = string
+  description = "postgres user"
+}

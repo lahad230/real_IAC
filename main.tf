@@ -32,7 +32,11 @@ resource "azurerm_network_security_group" "web" {
     protocol                   = "*"
     source_port_range          = "*"
     destination_port_ranges    = var.webNsgPorts
-    source_address_prefix      = "*"
+    source_address_prefixes    = [ 
+      "140.82.112.0/20", 
+      "192.30.252.0/22", 
+      "83.130.78.36"
+    ]
     destination_address_prefix = "*"
   }
 }
@@ -54,11 +58,18 @@ resource "azurerm_public_ip" "ip" {
   sku                 = "Standard"
 }
 
+resource "azurerm_public_ip" "jenkinsip" {
+  name                = "jenkinsip"
+  resource_group_name = module.projBase.rg_name
+  location            = module.projBase.rg_location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
 ######jenkins machine######
 
 resource "azurerm_network_interface" "jenNic" {
-  count = 2
-  name                = "jenkinsNic${count.index}"
+  name                = "jenkinsNic"
   location            = module.projBase.rg_location
   resource_group_name = module.projBase.rg_name
 
@@ -66,12 +77,12 @@ resource "azurerm_network_interface" "jenNic" {
     name                          = "jenNicConf"
     subnet_id                     = module.projBase.public_subnet_id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.jenkinsip.id
   }
 }
 
 resource "azurerm_linux_virtual_machine" "Vm" {
-  count = 2
-  name                = "jenkins${count.index}"
+  name                = "jenkins"
   resource_group_name = module.projBase.rg_name
   location            = module.projBase.rg_location
   size                = var.vmSize
@@ -81,7 +92,7 @@ resource "azurerm_linux_virtual_machine" "Vm" {
   disable_password_authentication = false
   
   network_interface_ids = [
-    azurerm_network_interface.jenNic[count.index].id
+    azurerm_network_interface.jenNic.id
   ]
 
   os_disk {

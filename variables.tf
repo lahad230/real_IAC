@@ -34,9 +34,18 @@ variable "publicSubnet" {
   type        = map
 }
 
+variable "privateSubnet" {
+  description = "private subnet cidr and name. eg-> name ='mysubenet' cidr = '10.0.1.0/28'"
+  type        = map
+}
 
 variable "publicNsg" {
   description = "name of the nsg associated with public subnet"
+  type = string
+}
+
+variable "privateNsg" {
+  description = "name of the nsg associated with private subnet"
   type = string
 }
 
@@ -51,6 +60,11 @@ variable "numOfPublicVms" {
 }
 
 variable "webNsgPorts" {
+  description = "list of ports open on the public subnet's nsg"
+  type = list
+}
+
+variable "dataNsgPorts" {
   description = "list of ports open on the public subnet's nsg"
   type = list
 }

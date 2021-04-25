@@ -15,7 +15,7 @@ module "projBase" {
   location          = var.location
   vNet              = var.vNet 
   publicSubnet      = var.publicSubnet
-  # privateSubnet     = var.privateSubnet  
+  privateSubnet     = var.privateSubnet  
 }
 
 #public subnet's nsg:
@@ -41,10 +41,35 @@ resource "azurerm_network_security_group" "web" {
   }
 }
 
+#private subnet's nsg:
+resource "azurerm_network_security_group" "data" {
+  name                = var.privateNsg
+  location            = module.projBase.rg_location
+  resource_group_name = module.projBase.rg_name
+
+  security_rule { 
+    name                       = "ports"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_ranges    = var.dataNsgPorts
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
 #public subnet nsg association:
 resource "azurerm_subnet_network_security_group_association" "publicNsg" {
   subnet_id                 = module.projBase.public_subnet_id
   network_security_group_id = azurerm_network_security_group.web.id
+}
+
+#private subnet nsg association:
+resource "azurerm_subnet_network_security_group_association" "privateNsg" {
+  subnet_id                 = module.projBase.private_subnet_id
+  network_security_group_id = azurerm_network_security_group.data.id
 }
 
 ##########Public ips##########
@@ -128,10 +153,25 @@ module "web" {
   postgres_user     = var.postgres_user
   postgres_password = var.postgresPassword
 
-  fqdn          = azurerm_postgresql_server.postgres.fqdn
-  depends_on = [
-    azurerm_postgresql_server.postgres
-  ]
+  fqdn          = "0.0.0.0"
+  # depends_on = [
+  #   azurerm_postgresql_server.postgres
+  # ]
+}
+
+module "data" {
+  source            = "./modules/linuxVmData"
+  vm_name           = "data"
+  rg_name           = module.projBase.rg_name
+  rg_location       = module.projBase.rg_location
+  vm_size           = var.vmSize
+  vm_username       = var.username
+  vm_password       = var.password
+  nic_name          = "data_nic"
+  nic_conf_name     = "data_conf"
+  subnet_id         = module.projBase.private_subnet_id
+  postgres_user     = var.postgresUser
+  postgres_password = var.postgresPassword
 }
 
 ###########Load balancers, probes, pools and rules############
@@ -198,22 +238,22 @@ resource "azurerm_lb_rule" "publicLbRule" {
   probe_id                       = azurerm_lb_probe.publicLbProbe.id
 }
 
-resource "azurerm_postgresql_server" "postgres" {
-  name                         = "weightdb"
-  location                     = module.projBase.rg_location
-  resource_group_name          = module.projBase.rg_name
-  administrator_login          = var.postgresUser
-  administrator_login_password = var.postgresPassword
+# resource "azurerm_postgresql_server" "postgres" {
+#   name                         = "weightdb"
+#   location                     = module.projBase.rg_location
+#   resource_group_name          = module.projBase.rg_name
+#   administrator_login          = var.postgresUser
+#   administrator_login_password = var.postgresPassword
 
-  sku_name                     = "GP_Gen5_4"
-  version                      = "11"
-  ssl_enforcement_enabled      = false
-}
+#   sku_name                     = "GP_Gen5_4"
+#   version                      = "11"
+#   ssl_enforcement_enabled      = false
+# }
 
-resource "azurerm_postgresql_firewall_rule" "postgresFire" {
-  name                = "postgresFire"
-  resource_group_name = module.projBase.rg_name
-  server_name         = azurerm_postgresql_server.postgres.name
-  start_ip_address    = "0.0.0.0"
-  end_ip_address      = "0.0.0.0"
-}
+# resource "azurerm_postgresql_firewall_rule" "postgresFire" {
+#   name                = "postgresFire"
+#   resource_group_name = module.projBase.rg_name
+#   server_name         = azurerm_postgresql_server.postgres.name
+#   start_ip_address    = "0.0.0.0"
+#   end_ip_address      = "0.0.0.0"
+# }

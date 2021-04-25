@@ -18,5 +18,9 @@ variable "publicSubnet" {
   type        = map
 }
 
+variable "privateSubnet" {
+  description = "private subnet cidr, name and associated nsg name. eg-> name ='mysubenet' cidr = '10.0.1.0/28' nsgName = 'nsgForsubnet'"
+  type        = map
+}
 
 
